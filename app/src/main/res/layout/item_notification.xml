@@ -39,6 +39,17 @@
             android:textColor="@color/notification_message" />
 
         <TextView
+            android:id="@+id/tvCameraLink"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="📷 Ver câmera"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/notification_title"
+            android:visibility="gone" />
+
+        <TextView
             android:id="@+id/tvTime"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

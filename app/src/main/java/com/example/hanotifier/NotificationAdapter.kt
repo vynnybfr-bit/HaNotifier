@@ -1,6 +1,8 @@
 package com.example.hanotifier
 
 import android.graphics.Color
+import android.content.Intent
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -24,6 +26,7 @@ class NotificationAdapter(
         val title: TextView = view.findViewById(R.id.tvTitle)
         val message: TextView = view.findViewById(R.id.tvMessage)
         val time: TextView = view.findViewById(R.id.tvTime)
+        val cameraLink: TextView = view.findViewById(R.id.tvCameraLink)
         val image: ImageView = view.findViewById(R.id.ivImage)
     }
 
@@ -39,6 +42,17 @@ class NotificationAdapter(
         holder.title.text = item.title
         holder.message.text = item.message
         holder.time.text = timeFormat.format(Date(item.timestamp))
+
+        if (!item.cameraUrl.isNullOrBlank()) {
+            holder.cameraLink.visibility = View.VISIBLE
+            holder.cameraLink.setOnClickListener {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(item.cameraUrl))
+                holder.itemView.context.startActivity(intent)
+            }
+        } else {
+            holder.cameraLink.visibility = View.GONE
+            holder.cameraLink.setOnClickListener(null)
+        }
 
         if (!item.imageUrl.isNullOrBlank()) {
             holder.image.visibility = View.VISIBLE
