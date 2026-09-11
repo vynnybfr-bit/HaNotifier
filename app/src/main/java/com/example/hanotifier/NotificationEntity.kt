@@ -10,5 +10,6 @@ data class NotificationEntity(
     val message: String,
     val imageUrl: String?,
     val cameraUrl: String?,
+    val cameraUrl2: String?,
     val timestamp: Long
 )

@@ -148,6 +148,10 @@ class HaWebSocketService : Service() {
         val title = data.optString("title", "Home Assistant")
         val message = data.optString("message", "")
         var cameraUrl = data.optString("camera_url", null)
+    var cameraUrl2 = data.optString("camera_url_2", null)
+    if (!cameraUrl2.isNullOrBlank() && cameraUrl2.startsWith("/")) {
+        cameraUrl2 = Prefs.httpBase(this) + cameraUrl2
+    }
         if (!cameraUrl.isNullOrBlank() && cameraUrl.startsWith("/")) {
             cameraUrl = Prefs.httpBase(this) + cameraUrl
         }
@@ -164,6 +168,7 @@ class HaWebSocketService : Service() {
                     message = message,
                     imageUrl = imageUrl,
                     cameraUrl = cameraUrl,
+                    cameraUrl2 = cameraUrl2,
                     timestamp = System.currentTimeMillis()
                 )
             )

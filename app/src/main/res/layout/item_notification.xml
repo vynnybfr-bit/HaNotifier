@@ -43,7 +43,18 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="📷 Ver câmera"
+            android:text="📷 Ver câmera corredor"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/notification_title"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tvCameraLink2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="📷 Ver câmera fundos"
             android:textSize="14sp"
             android:textStyle="bold"
             android:textColor="@color/notification_title"

@@ -27,6 +27,7 @@ class NotificationAdapter(
         val message: TextView = view.findViewById(R.id.tvMessage)
         val time: TextView = view.findViewById(R.id.tvTime)
         val cameraLink: TextView = view.findViewById(R.id.tvCameraLink)
+        val cameraLink2: TextView = view.findViewById(R.id.tvCameraLink2)
         val image: ImageView = view.findViewById(R.id.ivImage)
     }
 
@@ -52,6 +53,17 @@ class NotificationAdapter(
         } else {
             holder.cameraLink.visibility = View.GONE
             holder.cameraLink.setOnClickListener(null)
+        }
+
+        if (!item.cameraUrl2.isNullOrBlank()) {
+            holder.cameraLink2.visibility = View.VISIBLE
+            holder.cameraLink2.setOnClickListener {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(item.cameraUrl2))
+                holder.itemView.context.startActivity(intent)
+            }
+        } else {
+            holder.cameraLink2.visibility = View.GONE
+            holder.cameraLink2.setOnClickListener(null)
         }
 
         if (!item.imageUrl.isNullOrBlank()) {
