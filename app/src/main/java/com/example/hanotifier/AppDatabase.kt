@@ -38,4 +38,3 @@ abstract class AppDatabase : RoomDatabase() {
         }
     }
 }
-cat app/src/main/java/com/example/hanotifier/AppDatabase.kt
