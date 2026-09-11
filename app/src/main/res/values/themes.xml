@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.HaNotifier" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#128C7E</item>
+        <item name="colorPrimaryDark">#075E54</item>
+        <item name="colorAccent">#25D366</item>
+        <item name="android:windowBackground">#ECE5DD</item>
+    </style>
+</resources>
