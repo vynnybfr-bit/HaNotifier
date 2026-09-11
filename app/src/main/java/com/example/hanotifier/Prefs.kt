@@ -1,9 +1,47 @@
 package com.example.hanotifier
 
 import android.content.Context
+import androidx.appcompat.app.AppCompatDelegate
 
 object Prefs {
     private const val FILE = "ha_notifier_prefs"
+
+    // ---- Tema (escolhido manualmente pelo usuário, não segue o sistema) ----
+
+    fun saveDarkTheme(context: Context, dark: Boolean) {
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit()
+            .putBoolean("dark_theme", dark)
+            .apply()
+    }
+
+    fun isDarkTheme(context: Context): Boolean =
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE).getBoolean("dark_theme", false)
+
+    fun nightMode(context: Context): Int =
+        if (isDarkTheme(context)) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
+
+    // ---- Último status de conexão conhecido (pra mostrar na tela ao reabrir o app) ----
+
+    fun saveStatus(context: Context, status: String) {
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit()
+            .putString("last_status", status)
+            .apply()
+    }
+
+    fun lastStatus(context: Context): String =
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE).getString("last_status", "") ?: ""
+
+    // ---- Retenção do histórico: apaga notificações mais antigas que N dias ----
+    // 0 = nunca apagar
+
+    fun saveRetentionDays(context: Context, days: Int) {
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit()
+            .putInt("retention_days", days)
+            .apply()
+    }
+
+    fun retentionDays(context: Context): Int =
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE).getInt("retention_days", 7)
 
     fun save(context: Context, host: String, port: String, token: String, useSsl: Boolean) {
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit()

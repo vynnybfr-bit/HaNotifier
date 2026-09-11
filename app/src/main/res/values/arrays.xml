@@ -1,0 +1,18 @@
+<resources>
+    <string-array name="retention_labels">
+        <item>Nunca apagar</item>
+        <item>1 dia</item>
+        <item>3 dias</item>
+        <item>7 dias</item>
+        <item>30 dias</item>
+    </string-array>
+
+    <!-- Mesma ordem do array acima; "0" significa nunca apagar -->
+    <string-array name="retention_values">
+        <item>0</item>
+        <item>1</item>
+        <item>3</item>
+        <item>7</item>
+        <item>30</item>
+    </string-array>
+</resources>

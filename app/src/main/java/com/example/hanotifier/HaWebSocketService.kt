@@ -162,6 +162,7 @@ class HaWebSocketService : Service() {
                     timestamp = System.currentTimeMillis()
                 )
             )
+            HistoryCleaner.cleanupIfNeeded(applicationContext)
         }
 
         showAndroidNotification(title, message)
@@ -189,6 +190,7 @@ class HaWebSocketService : Service() {
     }
 
     private fun broadcastStatus(status: String) {
+        Prefs.saveStatus(this, status)
         val intent = Intent(ACTION_STATUS)
         intent.putExtra(EXTRA_STATUS, status)
         sendBroadcast(intent)

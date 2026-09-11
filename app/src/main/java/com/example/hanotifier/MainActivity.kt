@@ -14,8 +14,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
@@ -50,11 +52,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         requestNotificationPermissionIfNeeded()
+        lifecycleScope.launch { HistoryCleaner.cleanupIfNeeded(applicationContext) }
 
         if (Prefs.isConfigured(this)) {
+            val last = Prefs.lastStatus(this)
+            tvStatus.text = last.ifBlank { "conectando..." }
             startHaService()
         } else {
-            tvStatus.text = "Toque no ⚙ para configurar a conexão com o Home Assistant"
+            tvStatus.text = "desconectado — toque no ⚙ para configurar a conexão"
         }
     }
 
