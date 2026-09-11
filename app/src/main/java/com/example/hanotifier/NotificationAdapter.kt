@@ -46,6 +46,7 @@ class NotificationAdapter(
 
         if (!item.cameraUrl.isNullOrBlank()) {
             holder.cameraLink.visibility = View.VISIBLE
+            holder.cameraLink.text = item.cameraName?.takeIf { it.isNotBlank() } ?: "📷 Ver câmera"
             holder.cameraLink.setOnClickListener {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(item.cameraUrl))
                 holder.itemView.context.startActivity(intent)
@@ -57,6 +58,7 @@ class NotificationAdapter(
 
         if (!item.cameraUrl2.isNullOrBlank()) {
             holder.cameraLink2.visibility = View.VISIBLE
+            holder.cameraLink2.text = item.cameraName2?.takeIf { it.isNotBlank() } ?: "📷 Ver câmera 2"
             holder.cameraLink2.setOnClickListener {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(item.cameraUrl2))
                 holder.itemView.context.startActivity(intent)
