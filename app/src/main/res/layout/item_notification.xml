@@ -20,7 +20,7 @@
             android:layout_height="wrap_content"
             android:textStyle="bold"
             android:textSize="15sp"
-            android:textColor="#075E54" />
+            android:textColor="@color/notification_title" />
 
         <ImageView
             android:id="@+id/ivImage"
@@ -36,7 +36,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textSize="14sp"
-            android:textColor="#222222" />
+            android:textColor="@color/notification_message" />
 
         <TextView
             android:id="@+id/tvTime"
@@ -45,7 +45,7 @@
             android:layout_marginTop="4dp"
             android:textSize="10sp"
             android:gravity="end"
-            android:textColor="#888888" />
+            android:textColor="@color/notification_time" />
 
     </LinearLayout>
 

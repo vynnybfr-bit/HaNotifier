@@ -10,10 +10,10 @@ import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -24,6 +24,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: NotificationAdapter
     private lateinit var tvStatus: android.widget.TextView
+
+    private var normalToolbarTitle: CharSequence = ""
+
+    private lateinit var selectionBackCallback: OnBackPressedCallback
 
     private val statusReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -37,22 +41,42 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         setSupportActionBar(findViewById(R.id.toolbar))
+        normalToolbarTitle = supportActionBar?.title ?: "HaNotifier"
 
         tvStatus = findViewById(R.id.tvStatus)
         recyclerView = findViewById(R.id.recyclerView)
-        adapter = NotificationAdapter(emptyList())
+
+        adapter = NotificationAdapter(emptyList()) { selectedCount ->
+            updateSelectionMode(selectedCount)
+        }
+
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
 
         AppDatabase.getInstance(this).notificationDao().getAllLive().observe(this) { list ->
             adapter.updateData(list)
+
             if (list.isNotEmpty()) {
                 recyclerView.scrollToPosition(list.size - 1)
             }
         }
 
+        selectionBackCallback = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() {
+                adapter.clearSelection()
+            }
+        }
+
+        onBackPressedDispatcher.addCallback(
+            this,
+            selectionBackCallback
+        )
+
         requestNotificationPermissionIfNeeded()
-        lifecycleScope.launch { HistoryCleaner.cleanupIfNeeded(applicationContext) }
+
+        lifecycleScope.launch {
+            HistoryCleaner.cleanupIfNeeded(applicationContext)
+        }
 
         if (Prefs.isConfigured(this)) {
             val last = Prefs.lastStatus(this)
@@ -65,9 +89,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+
         val filter = IntentFilter(HaWebSocketService.ACTION_STATUS)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(statusReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            registerReceiver(
+                statusReceiver,
+                filter,
+                Context.RECEIVER_NOT_EXPORTED
+            )
         } else {
             @Suppress("UnspecifiedRegisterReceiverFlag")
             registerReceiver(statusReceiver, filter)
@@ -81,15 +111,72 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
+        updateMenuVisibility(menu)
         return true
     }
 
+    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+        updateMenuVisibility(menu)
+        return super.onPrepareOptionsMenu(menu)
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.action_settings) {
-            startActivity(Intent(this, SettingsActivity::class.java))
-            return true
+        when (item.itemId) {
+            R.id.action_settings -> {
+                startActivity(Intent(this, SettingsActivity::class.java))
+                return true
+            }
+
+            R.id.action_delete -> {
+                deleteSelectedNotifications()
+                return true
+            }
         }
+
         return super.onOptionsItemSelected(item)
+    }
+
+    private fun updateSelectionMode(selectedCount: Int) {
+        val selectionMode = selectedCount > 0
+
+        selectionBackCallback.isEnabled = selectionMode
+
+        supportActionBar?.title = if (selectionMode) {
+            if (selectedCount == 1) {
+                "1 selecionada"
+            } else {
+                "$selectedCount selecionadas"
+            }
+        } else {
+            normalToolbarTitle
+        }
+
+        invalidateOptionsMenu()
+    }
+
+    private fun updateMenuVisibility(menu: Menu?) {
+        menu ?: return
+
+        val selectionMode = adapter.getSelectedIds().isNotEmpty()
+
+        menu.findItem(R.id.action_settings)?.isVisible = !selectionMode
+        menu.findItem(R.id.action_delete)?.isVisible = selectionMode
+    }
+
+    private fun deleteSelectedNotifications() {
+        val selectedIds = adapter.getSelectedIds()
+
+        if (selectedIds.isEmpty()) {
+            return
+        }
+
+        lifecycleScope.launch {
+            AppDatabase.getInstance(this@MainActivity)
+                .notificationDao()
+                .deleteByIds(selectedIds)
+
+            adapter.clearSelection()
+        }
     }
 
     private fun startHaService() {
@@ -99,11 +186,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun requestNotificationPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED
+            if (
+                ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
             ) {
                 ActivityCompat.requestPermissions(
-                    this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1
+                    this,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    1
                 )
             }
         }

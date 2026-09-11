@@ -1,5 +1,6 @@
 package com.example.hanotifier
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,9 +12,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class NotificationAdapter(private var items: List<NotificationEntity>) :
-    RecyclerView.Adapter<NotificationAdapter.ViewHolder>() {
+class NotificationAdapter(
+    private var items: List<NotificationEntity>,
+    private val onSelectionChanged: (Int) -> Unit
+) : RecyclerView.Adapter<NotificationAdapter.ViewHolder>() {
 
+    private val selectedIds = mutableSetOf<Long>()
     private val timeFormat = SimpleDateFormat("dd/MM HH:mm", Locale("pt", "BR"))
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -31,6 +35,7 @@ class NotificationAdapter(private var items: List<NotificationEntity>) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
+
         holder.title.text = item.title
         holder.message.text = item.message
         holder.time.text = timeFormat.format(Date(item.timestamp))
@@ -43,12 +48,55 @@ class NotificationAdapter(private var items: List<NotificationEntity>) :
         } else {
             holder.image.visibility = View.GONE
         }
+
+        val isSelected = selectedIds.contains(item.id)
+
+        holder.itemView.setBackgroundColor(
+            if (isSelected) Color.LTGRAY else Color.TRANSPARENT
+        )
+
+        holder.itemView.setOnLongClickListener {
+            toggleSelection(item.id)
+            true
+        }
+
+        holder.itemView.setOnClickListener {
+            if (selectedIds.isNotEmpty()) {
+                toggleSelection(item.id)
+            }
+        }
     }
 
     override fun getItemCount(): Int = items.size
 
     fun updateData(newItems: List<NotificationEntity>) {
         items = newItems
+
+        val validIds = newItems.map { it.id }.toSet()
+        selectedIds.retainAll(validIds)
+
         notifyDataSetChanged()
+        onSelectionChanged(selectedIds.size)
+    }
+
+    fun getSelectedIds(): List<Long> {
+        return selectedIds.toList()
+    }
+
+    fun clearSelection() {
+        selectedIds.clear()
+        notifyDataSetChanged()
+        onSelectionChanged(0)
+    }
+
+    private fun toggleSelection(id: Long) {
+        if (selectedIds.contains(id)) {
+            selectedIds.remove(id)
+        } else {
+            selectedIds.add(id)
+        }
+
+        notifyDataSetChanged()
+        onSelectionChanged(selectedIds.size)
     }
 }

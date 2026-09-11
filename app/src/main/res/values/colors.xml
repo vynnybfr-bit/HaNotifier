@@ -1,4 +1,8 @@
 <resources>
     <color name="toolbar_bg">#128C7E</color>
+
     <color name="bubble_background">#FFFFFF</color>
+    <color name="notification_title">#075E54</color>
+    <color name="notification_message">#222222</color>
+    <color name="notification_time">#888888</color>
 </resources>
