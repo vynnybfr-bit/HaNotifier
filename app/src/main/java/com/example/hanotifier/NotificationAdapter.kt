@@ -51,9 +51,11 @@ class NotificationAdapter(
 
         val isSelected = selectedIds.contains(item.id)
 
-        holder.itemView.setBackgroundColor(
-            if (isSelected) Color.LTGRAY else Color.TRANSPARENT
-        )
+        if (isSelected) {
+            holder.itemView.setBackgroundResource(R.drawable.item_selected_bg)
+        } else {
+            holder.itemView.setBackgroundColor(Color.TRANSPARENT)
+        }
 
         holder.itemView.setOnLongClickListener {
             toggleSelection(item.id)

@@ -5,4 +5,5 @@
     <color name="notification_title">#80CBC4</color>
     <color name="notification_message">#E9EDEF</color>
     <color name="notification_time">#8696A0</color>
+    <color name="notification_selected_background">#37474F</color>
 </resources>
