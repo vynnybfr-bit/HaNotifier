@@ -42,6 +42,7 @@ class HaWebSocketService : Service() {
     private var messageIdCounter = 1
     private val handler = Handler(Looper.getMainLooper())
     private var reconnectScheduled = false
+    private var lastNotifiedConnectionState: Boolean? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -205,10 +206,23 @@ class HaWebSocketService : Service() {
 
     private fun broadcastStatus(status: String) {
         Prefs.saveStatus(this, status)
+
         val intent = Intent(ACTION_STATUS)
         intent.putExtra(EXTRA_STATUS, status)
         sendBroadcast(intent)
-        updateForegroundNotification(status)
+
+        val connectionState = when {
+            status == "conectado ✔" -> true
+            status == "desconectado" || status.startsWith("falha na conexão") -> false
+            else -> null
+        }
+
+        if (connectionState == null || connectionState != lastNotifiedConnectionState) {
+            if (connectionState != null) {
+                lastNotifiedConnectionState = connectionState
+            }
+            updateForegroundNotification(status)
+        }
     }
 
     private fun updateForegroundNotification(status: String) {
