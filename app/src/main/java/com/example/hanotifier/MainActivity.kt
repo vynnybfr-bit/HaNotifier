@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity() {
             adapter.updateData(list)
 
             if (list.isNotEmpty()) {
-                recyclerView.scrollToPosition(list.size - 1)
+                recyclerView.scrollToPosition(0)
             }
         }
 
