@@ -2,6 +2,9 @@ package com.example.hanotifier
 
 import android.graphics.Color
 import android.content.Intent
+import android.app.Dialog
+import android.graphics.drawable.ColorDrawable
+import android.view.Window
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
@@ -70,6 +73,9 @@ class NotificationAdapter(
 
         if (!item.imageUrl.isNullOrBlank()) {
             holder.image.visibility = View.VISIBLE
+              holder.image.setOnClickListener {
+                  showImageFullscreen(holder.image.context, item.imageUrl)
+              }
             Glide.with(holder.image.context)
                 .load(item.imageUrl)
                 .into(holder.image)
@@ -117,6 +123,29 @@ class NotificationAdapter(
         selectedIds.clear()
         notifyDataSetChanged()
         onSelectionChanged(0)
+    }
+    private fun showImageFullscreen(context: android.content.Context, imageUrl: String) {
+        val dialog = Dialog(context)
+        val imageView = ImageView(context)
+        imageView.setBackgroundColor(Color.BLACK)
+        imageView.scaleType = ImageView.ScaleType.FIT_CENTER
+
+        Glide.with(context)
+            .load(imageUrl)
+            .into(imageView)
+
+        imageView.setOnClickListener { dialog.dismiss() }
+        dialog.setContentView(imageView)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.BLACK))
+        dialog.window?.setLayout(
+            android.view.WindowManager.LayoutParams.MATCH_PARENT,
+            android.view.WindowManager.LayoutParams.MATCH_PARENT
+        )
+        dialog.show()
+        dialog.window?.setLayout(
+            android.view.WindowManager.LayoutParams.MATCH_PARENT,
+            android.view.WindowManager.LayoutParams.MATCH_PARENT
+        )
     }
 
     private fun toggleSelection(id: Long) {
