@@ -47,7 +47,7 @@ class HaWebSocketService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        startForeground(FOREGROUND_ID, buildForegroundNotification("Conectando ao Home Assistant..."))
+        startForeground(FOREGROUND_ID, buildForegroundNotification())
         connect()
     }
 
@@ -152,9 +152,9 @@ class HaWebSocketService : Service() {
         var cameraUrl2 = data.optString("camera_url_2", null)
         val cameraName = data.optString("camera_name", "Ver câmera")
         val cameraName2 = data.optString("camera_name_2", "Ver câmera 2")
-    if (!cameraUrl2.isNullOrBlank() && cameraUrl2.startsWith("/")) {
-        cameraUrl2 = Prefs.httpBase(this) + cameraUrl2
-    }
+        if (!cameraUrl2.isNullOrBlank() && cameraUrl2.startsWith("/")) {
+            cameraUrl2 = Prefs.httpBase(this) + cameraUrl2
+        }
         if (!cameraUrl.isNullOrBlank() && cameraUrl.startsWith("/")) {
             cameraUrl = Prefs.httpBase(this) + cameraUrl
         }
@@ -221,20 +221,20 @@ class HaWebSocketService : Service() {
             if (connectionState != null) {
                 lastNotifiedConnectionState = connectionState
             }
-            updateForegroundNotification(status)
+            updateForegroundNotification()
         }
     }
 
-    private fun updateForegroundNotification(status: String) {
+    private fun updateForegroundNotification() {
         val nm = getSystemService(NotificationManager::class.java)
-        nm.notify(FOREGROUND_ID, buildForegroundNotification(status))
+        nm.notify(FOREGROUND_ID, buildForegroundNotification())
     }
 
-    private fun buildForegroundNotification(status: String): Notification {
+    private fun buildForegroundNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("HA Notifier")
-            .setContentText(status)
+            .setContentText("Serviço ativo")
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
