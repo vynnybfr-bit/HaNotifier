@@ -31,6 +31,7 @@ class HaWebSocketService : Service() {
 
     companion object {
         const val CHANNEL_ID = "ha_notifier_channel"
+        const val FOREGROUND_CHANNEL_ID = "ha_notifier_service_channel"
         const val FOREGROUND_ID = 1
         const val EVENT_TYPE = "mobile_notify"
         const val ACTION_STATUS = "com.example.hanotifier.STATUS"
@@ -46,7 +47,7 @@ class HaWebSocketService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        createNotificationChannel()
+        createNotificationChannels()
         startForeground(FOREGROUND_ID, buildForegroundNotification())
         connect()
     }
@@ -204,6 +205,10 @@ class HaWebSocketService : Service() {
         nm.notify(System.currentTimeMillis().toInt(), notification)
     }
 
+    private fun showDisconnectNotification(status: String) {
+        showAndroidNotification("Conexão perdida", status)
+    }
+
     private fun broadcastStatus(status: String) {
         Prefs.saveStatus(this, status)
 
@@ -220,6 +225,9 @@ class HaWebSocketService : Service() {
         if (connectionState == null || connectionState != lastNotifiedConnectionState) {
             if (connectionState != null) {
                 lastNotifiedConnectionState = connectionState
+                if (!connectionState) {
+                    showDisconnectNotification(status)
+                }
             }
             updateForegroundNotification()
         }
@@ -231,22 +239,31 @@ class HaWebSocketService : Service() {
     }
 
     private fun buildForegroundNotification(): Notification {
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        return NotificationCompat.Builder(this, FOREGROUND_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("HA Notifier")
             .setContentText("Serviço ativo")
             .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
             .build()
     }
 
-    private fun createNotificationChannel() {
-        val channel = NotificationChannel(
+    private fun createNotificationChannels() {
+        val nm = getSystemService(NotificationManager::class.java)
+
+        val eventChannel = NotificationChannel(
             CHANNEL_ID,
             "Notificações do Home Assistant",
             NotificationManager.IMPORTANCE_HIGH
         )
-        val nm = getSystemService(NotificationManager::class.java)
-        nm.createNotificationChannel(channel)
+        nm.createNotificationChannel(eventChannel)
+
+        val foregroundChannel = NotificationChannel(
+            FOREGROUND_CHANNEL_ID,
+            "Serviço em segundo plano",
+            NotificationManager.IMPORTANCE_MIN
+        )
+        foregroundChannel.setShowBadge(false)
+        nm.createNotificationChannel(foregroundChannel)
     }
 }
