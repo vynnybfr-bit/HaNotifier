@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +37,7 @@ class HaWebSocketService : Service() {
         const val EVENT_TYPE = "mobile_notify"
         const val ACTION_STATUS = "com.example.hanotifier.STATUS"
         const val EXTRA_STATUS = "status"
+        private const val TAG = "HaNotifierAuth"
     }
 
     private var client: OkHttpClient? = null
@@ -70,6 +72,10 @@ class HaWebSocketService : Service() {
             return
         }
 
+        val token = Prefs.token(this)
+        Log.d(TAG, "connect(): token configurado=${token.isNotBlank()}, tamanho=${token.length}, resumo=${tokenSummary(token)}")
+        Log.d(TAG, "connect(): wsUrl=${Prefs.wsUrl(this)}")
+
         client = OkHttpClient.Builder()
             .readTimeout(0, TimeUnit.MILLISECONDS) // conexão longa, sem timeout de leitura
             .pingInterval(30, TimeUnit.SECONDS)
@@ -80,6 +86,7 @@ class HaWebSocketService : Service() {
         webSocket = client!!.newWebSocket(request, object : WebSocketListener() {
 
             override fun onOpen(webSocket: WebSocket, response: Response) {
+                Log.d(TAG, "WebSocket aberto. Aguardando auth_required...")
                 broadcastStatus("conectado, autenticando...")
             }
 
@@ -92,6 +99,7 @@ class HaWebSocketService : Service() {
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                Log.e(TAG, "WebSocket failure: ${t.message}", t)
                 broadcastStatus("falha na conexão: ${t.message ?: "sem rede local"}")
                 scheduleReconnect()
             }
@@ -111,16 +119,21 @@ class HaWebSocketService : Service() {
         val json = JSONObject(text)
         when (json.optString("type")) {
             "auth_required" -> {
+                val token = Prefs.token(this)
+                Log.d(TAG, "Recebido auth_required. Enviando auth: token configurado=${token.isNotBlank()}, tamanho=${token.length}, resumo=${tokenSummary(token)}")
                 val auth = JSONObject()
                 auth.put("type", "auth")
-                auth.put("access_token", Prefs.token(this))
-                webSocket.send(auth.toString())
+                auth.put("access_token", token)
+                val sent = webSocket.send(auth.toString())
+                Log.d(TAG, "Mensagem auth enviada pelo WebSocket: $sent")
             }
             "auth_ok" -> {
+                Log.d(TAG, "AUTH OK recebido do Home Assistant")
                 broadcastStatus("conectado ✔")
                 subscribeToEvent(webSocket)
             }
             "auth_invalid" -> {
+                Log.e(TAG, "AUTH INVALID recebido do Home Assistant")
                 broadcastStatus("token inválido — verifique nas Configurações")
             }
             "event" -> {
@@ -128,6 +141,11 @@ class HaWebSocketService : Service() {
                 onNotifyEvent(eventData)
             }
         }
+    }
+
+    private fun tokenSummary(token: String): String {
+        if (token.length < 8) return "curto-demais"
+        return "${token.take(4)}...${token.takeLast(4)}"
     }
 
     private fun subscribeToEvent(webSocket: WebSocket) {
