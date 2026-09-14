@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.content.Intent
 import android.app.Dialog
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
 import android.view.Window
 import android.net.Uri
 import android.view.LayoutInflater
@@ -11,8 +12,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import android.util.Log
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -21,6 +26,10 @@ class NotificationAdapter(
     private var items: List<NotificationEntity>,
     private val onSelectionChanged: (Int) -> Unit
 ) : RecyclerView.Adapter<NotificationAdapter.ViewHolder>() {
+
+    companion object {
+        private const val TAG = "HaNotifierImage"
+    }
 
     private val selectedIds = mutableSetOf<Long>()
     private val timeFormat = SimpleDateFormat("dd/MM HH:mm", Locale("pt", "BR"))
@@ -73,14 +82,48 @@ class NotificationAdapter(
 
         if (!item.imageUrl.isNullOrBlank()) {
             holder.image.visibility = View.VISIBLE
-              holder.image.setOnClickListener {
-                  showImageFullscreen(holder.image.context, item.imageUrl)
-              }
+            holder.image.setOnClickListener {
+                showImageFullscreen(holder.image.context, item.imageUrl)
+            }
+
+            Log.d(TAG, "IMAGE LOAD START | notificationId=${item.id} | url=${item.imageUrl}")
+
             Glide.with(holder.image.context)
                 .load(item.imageUrl)
+                .listener(object : RequestListener<Drawable> {
+                    override fun onLoadFailed(
+                        e: com.bumptech.glide.load.engine.GlideException?,
+                        model: Any?,
+                        target: Target<Drawable>,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Log.e(
+                            TAG,
+                            "IMAGE LOAD FAILED | notificationId=${item.id} | url=$model | first=$isFirstResource | error=${e?.message}",
+                            e
+                        )
+                        return false
+                    }
+
+                    override fun onResourceReady(
+                        resource: Drawable,
+                        model: Any,
+                        target: Target<Drawable>?,
+                        dataSource: DataSource,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Log.d(
+                            TAG,
+                            "IMAGE LOAD SUCCESS | notificationId=${item.id} | url=$model | source=$dataSource | first=$isFirstResource"
+                        )
+                        return false
+                    }
+                })
                 .into(holder.image)
         } else {
             holder.image.visibility = View.GONE
+            holder.image.setOnClickListener(null)
+            Glide.with(holder.image.context).clear(holder.image)
         }
 
         val isSelected = selectedIds.contains(item.id)
@@ -124,6 +167,7 @@ class NotificationAdapter(
         notifyDataSetChanged()
         onSelectionChanged(0)
     }
+
     private fun showImageFullscreen(context: android.content.Context, imageUrl: String) {
         val dialog = Dialog(context)
         val imageView = ImageView(context)
