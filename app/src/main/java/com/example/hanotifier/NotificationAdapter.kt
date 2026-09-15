@@ -90,6 +90,11 @@ class NotificationAdapter(
                         target: Target<android.graphics.drawable.Drawable>,
                         isFirstResource: Boolean
                     ): Boolean {
+                        val reason = e?.rootCauses?.firstOrNull()?.message
+                            ?: e?.message
+                            ?: "erro desconhecido"
+                        holder.image.setImageDrawable(null)
+                        holder.image.contentDescription = "Erro ao carregar foto: $reason"
                         Log.e("HaNotifierImage", "Falha ao carregar imagem: $model", e)
                         return false
                     }
@@ -101,6 +106,7 @@ class NotificationAdapter(
                         dataSource: DataSource,
                         isFirstResource: Boolean
                     ): Boolean {
+                        holder.image.contentDescription = null
                         Log.d("HaNotifierImage", "Imagem carregada: $model | origem=$dataSource")
                         return false
                     }
