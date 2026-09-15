@@ -13,9 +13,14 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import android.util.Log
 
 class NotificationAdapter(
     private var items: List<NotificationEntity>,
@@ -73,14 +78,37 @@ class NotificationAdapter(
 
         if (!item.imageUrl.isNullOrBlank()) {
             holder.image.visibility = View.VISIBLE
-              holder.image.setOnClickListener {
-                  showImageFullscreen(holder.image.context, item.imageUrl)
-              }
+            holder.image.setOnClickListener {
+                showImageFullscreen(holder.image.context, item.imageUrl)
+            }
             Glide.with(holder.image.context)
                 .load(item.imageUrl)
+                .listener(object : RequestListener<android.graphics.drawable.Drawable> {
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<android.graphics.drawable.Drawable>,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Log.e("HaNotifierImage", "Falha ao carregar imagem: $model", e)
+                        return false
+                    }
+
+                    override fun onResourceReady(
+                        resource: android.graphics.drawable.Drawable,
+                        model: Any,
+                        target: Target<android.graphics.drawable.Drawable>?,
+                        dataSource: DataSource,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Log.d("HaNotifierImage", "Imagem carregada: $model | origem=$dataSource")
+                        return false
+                    }
+                })
                 .into(holder.image)
         } else {
             holder.image.visibility = View.GONE
+            Glide.with(holder.image.context).clear(holder.image)
         }
 
         val isSelected = selectedIds.contains(item.id)
