@@ -37,6 +37,8 @@ class NotificationAdapter(
         val cameraLink: TextView = view.findViewById(R.id.tvCameraLink)
         val cameraLink2: TextView = view.findViewById(R.id.tvCameraLink2)
         val image: ImageView = view.findViewById(R.id.ivImage)
+        val imageContainer: View = view.findViewById(R.id.imageContainer)
+        val imageStatus: TextView = view.findViewById(R.id.tvImageStatus)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -76,11 +78,22 @@ class NotificationAdapter(
             holder.cameraLink2.setOnClickListener(null)
         }
 
+        // Reset the image area first because RecyclerView reuses these views.
+        holder.imageContainer.visibility = View.GONE
+        holder.image.visibility = View.VISIBLE
+        holder.imageStatus.visibility = View.GONE
+        holder.imageStatus.text = ""
+        holder.image.contentDescription = null
+        Glide.with(holder.image.context).clear(holder.image)
+
         if (!item.imageUrl.isNullOrBlank()) {
-            holder.image.visibility = View.VISIBLE
+            holder.imageContainer.visibility = View.VISIBLE
+            holder.imageStatus.visibility = View.VISIBLE
+            holder.imageStatus.text = "Carregando foto..."
             holder.image.setOnClickListener {
                 showImageFullscreen(holder.image.context, item.imageUrl)
             }
+
             Glide.with(holder.image.context)
                 .load(item.imageUrl)
                 .listener(object : RequestListener<android.graphics.drawable.Drawable> {
@@ -94,6 +107,8 @@ class NotificationAdapter(
                             ?: e?.message
                             ?: "erro desconhecido"
                         holder.image.setImageDrawable(null)
+                        holder.imageStatus.visibility = View.VISIBLE
+                        holder.imageStatus.text = "❌ ERRO AO CARREGAR FOTO\n$reason"
                         holder.image.contentDescription = "Erro ao carregar foto: $reason"
                         Log.e("HaNotifierImage", "Falha ao carregar imagem: $model", e)
                         return false
@@ -106,6 +121,7 @@ class NotificationAdapter(
                         dataSource: DataSource,
                         isFirstResource: Boolean
                     ): Boolean {
+                        holder.imageStatus.visibility = View.GONE
                         holder.image.contentDescription = null
                         Log.d("HaNotifierImage", "Imagem carregada: $model | origem=$dataSource")
                         return false
@@ -113,8 +129,12 @@ class NotificationAdapter(
                 })
                 .into(holder.image)
         } else {
+            holder.imageContainer.visibility = View.VISIBLE
             holder.image.visibility = View.GONE
-            Glide.with(holder.image.context).clear(holder.image)
+            holder.imageStatus.visibility = View.VISIBLE
+            holder.imageStatus.text = "⚠️ SEM FOTO\nA notificação não recebeu image_url"
+            holder.image.setOnClickListener(null)
+            Log.w("HaNotifierImage", "Notificação ${item.id} sem imageUrl")
         }
 
         val isSelected = selectedIds.contains(item.id)
