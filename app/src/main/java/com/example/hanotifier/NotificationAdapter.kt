@@ -4,7 +4,6 @@ import android.graphics.Color
 import android.content.Intent
 import android.app.Dialog
 import android.graphics.drawable.ColorDrawable
-import android.view.Window
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
@@ -17,6 +16,7 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -90,12 +90,21 @@ class NotificationAdapter(
             holder.imageContainer.visibility = View.VISIBLE
             holder.imageStatus.visibility = View.VISIBLE
             holder.imageStatus.text = "Carregando foto..."
+
+            // Novas notificações guardam o caminho do arquivo local. Notificações antigas
+            // podem ainda conter uma URL do Home Assistant, então mantemos compatibilidade.
+            val imageModel: Any = if (item.imageUrl.startsWith("/")) {
+                File(item.imageUrl)
+            } else {
+                item.imageUrl
+            }
+
             holder.image.setOnClickListener {
-                showImageFullscreen(holder.image.context, item.imageUrl)
+                showImageFullscreen(holder.image.context, imageModel)
             }
 
             Glide.with(holder.image.context)
-                .load(item.imageUrl)
+                .load(imageModel)
                 .listener(object : RequestListener<android.graphics.drawable.Drawable> {
                     override fun onLoadFailed(
                         e: GlideException?,
@@ -178,14 +187,15 @@ class NotificationAdapter(
         notifyDataSetChanged()
         onSelectionChanged(0)
     }
-    private fun showImageFullscreen(context: android.content.Context, imageUrl: String) {
+
+    private fun showImageFullscreen(context: android.content.Context, imageModel: Any) {
         val dialog = Dialog(context)
         val imageView = ImageView(context)
         imageView.setBackgroundColor(Color.BLACK)
         imageView.scaleType = ImageView.ScaleType.FIT_CENTER
 
         Glide.with(context)
-            .load(imageUrl)
+            .load(imageModel)
             .into(imageView)
 
         imageView.setOnClickListener { dialog.dismiss() }
