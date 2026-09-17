@@ -176,7 +176,7 @@ class HaWebSocketService : Service() {
                 val localPath = NotificationImageStore.download(
                     applicationContext,
                     httpClient,
-                    imageUrl
+                    imageUrl!!
                 )
 
                 if (localPath != null) {
