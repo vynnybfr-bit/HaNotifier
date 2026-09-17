@@ -22,12 +22,6 @@ import okhttp3.WebSocketListener
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
-/**
- * Mantém uma conexão permanente com a API WebSocket do Home Assistant, na rede local.
- * Escuta o evento customizado "mobile_notify" (você dispara esse evento nas suas automações
- * do HA, no lugar / além do telegram_bot.send_message) e grava cada notificação recebida
- * no banco local, além de mostrar uma notificação do Android.
- */
 class HaWebSocketService : Service() {
 
     companion object {
@@ -54,9 +48,7 @@ class HaWebSocketService : Service() {
         connect()
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_STICKY
-    }
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -77,14 +69,13 @@ class HaWebSocketService : Service() {
         Log.d(TAG, "connect(): wsUrl=${Prefs.wsUrl(this)}")
 
         client = OkHttpClient.Builder()
-            .readTimeout(0, TimeUnit.MILLISECONDS) // conexão longa, sem timeout de leitura
+            .readTimeout(0, TimeUnit.MILLISECONDS)
             .pingInterval(30, TimeUnit.SECONDS)
             .build()
 
         val request = Request.Builder().url(Prefs.wsUrl(this)).build()
 
         webSocket = client!!.newWebSocket(request, object : WebSocketListener() {
-
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 Log.d(TAG, "WebSocket aberto. Aguardando auth_required...")
                 broadcastStatus("conectado, autenticando...")
@@ -156,14 +147,6 @@ class HaWebSocketService : Service() {
         webSocket.send(msg.toString())
     }
 
-    /**
-     * Espera um payload assim (disparado pela automação do HA via `event: mobile_notify`):
-     * {
-     *   "title": "Câmera Rua",
-     *   "message": "Movimento detectado",
-     *   "image_url": "/api/camera_proxy/camera.rua?token=..."   (opcional, caminho relativo ou absoluto)
-     * }
-     */
     private fun onNotifyEvent(data: JSONObject) {
         val title = data.optString("title", "Home Assistant")
         val message = data.optString("message", "")
@@ -171,24 +154,48 @@ class HaWebSocketService : Service() {
         var cameraUrl2 = data.optString("camera_url_2", null)
         val cameraName = data.optString("camera_name", "Ver câmera")
         val cameraName2 = data.optString("camera_name_2", "Ver câmera 2")
+
         if (!cameraUrl2.isNullOrBlank() && cameraUrl2.startsWith("/")) {
             cameraUrl2 = Prefs.httpBase(this) + cameraUrl2
         }
         if (!cameraUrl.isNullOrBlank() && cameraUrl.startsWith("/")) {
             cameraUrl = Prefs.httpBase(this) + cameraUrl
         }
+
         var imageUrl = data.optString("image_url", null)
         if (!imageUrl.isNullOrBlank() && imageUrl.startsWith("/")) {
             imageUrl = Prefs.httpBase(this) + imageUrl
         }
 
+        val httpClient = client
+
         CoroutineScope(Dispatchers.IO).launch {
+            // O image_proxy usa URL/token temporário. Baixamos a imagem imediatamente,
+            // enquanto o token recebido neste evento ainda está válido.
+            val storedImageUrl = if (!imageUrl.isNullOrBlank() && httpClient != null) {
+                val localPath = NotificationImageStore.download(
+                    applicationContext,
+                    httpClient,
+                    imageUrl
+                )
+
+                if (localPath != null) {
+                    Log.d(TAG, "Imagem armazenada localmente: $localPath")
+                    localPath
+                } else {
+                    Log.e(TAG, "Falha no download imediato; usando image_url como fallback")
+                    imageUrl
+                }
+            } else {
+                imageUrl
+            }
+
             val dao = AppDatabase.getInstance(applicationContext).notificationDao()
             dao.insert(
                 NotificationEntity(
                     title = title,
                     message = message,
-                    imageUrl = imageUrl,
+                    imageUrl = storedImageUrl,
                     cameraUrl = cameraUrl,
                     cameraUrl2 = cameraUrl2,
                     cameraName = cameraName,
